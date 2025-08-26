@@ -80,7 +80,7 @@ pressure_wind_annual_interaction = mean_wind_annual * mean_pressure_annual
 # Create prediction button
 if st.button("Predict Emissions"):
     try:
-        # Create input data
+        # Create input data (keep categorical as strings - the pipeline will handle encoding)
         input_data = pd.DataFrame({
             'Year': [year],
             'Latitude': [latitude],
@@ -98,17 +98,7 @@ if st.button("Predict Emissions"):
             'Facility_Count_25km': [facility_count]
         })
         
-        # Create dummy variables for categorical features
-        sector_df = pd.DataFrame({'Sector': [sector]})
-        region_df = pd.DataFrame({'UK_Region': [uk_region]})
-        
-        sector_dummies = pd.get_dummies(sector_df, columns=['Sector'], prefix='Sector')
-        region_dummies = pd.get_dummies(region_df, columns=['UK_Region'], prefix='UK_Region')
-        
-        # Combine all features
-        input_data = pd.concat([input_data, sector_dummies, region_dummies], axis=1)
-        
-        # Make prediction
+        # Make prediction (the pipeline will handle preprocessing)
         prediction = model.predict(input_data)[0]
         
         # Display prediction
