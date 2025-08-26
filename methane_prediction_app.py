@@ -38,6 +38,18 @@ def load_model():
         st.error(f"Error accessing model file: {str(e)}")
         st.stop()
 
+# Create categorical encoders
+def encode_categorical(df):
+    # Create one-hot encoding for Sector
+    sector_dummies = pd.get_dummies(df['Sector'], prefix='Sector')
+    df = pd.concat([df.drop('Sector', axis=1), sector_dummies], axis=1)
+    
+    # Create one-hot encoding for UK_Region
+    region_dummies = pd.get_dummies(df['UK_Region'], prefix='UK_Region')
+    df = pd.concat([df.drop('UK_Region', axis=1), region_dummies], axis=1)
+    
+    return df
+
 # Try to load the model
 try:
     with st.spinner('Loading model...'):
@@ -111,6 +123,9 @@ if st.button("Predict Emissions"):
             'mean_pressure_annual_X_mean_wind_annual': [pressure_wind_annual_interaction],
             'Facility_Count_25km': [facility_count]
         })
+        
+        # Encode categorical variables
+        input_data = encode_categorical(input_data)
         
         # Make prediction
         prediction = model.predict(input_data)[0]
