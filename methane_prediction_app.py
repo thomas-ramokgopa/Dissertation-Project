@@ -85,6 +85,8 @@ if st.button("Predict Emissions"):
             'Year': [year],
             'Latitude': [latitude],
             'Longitude': [longitude],
+            'Sector': [sector],
+            'UK_Region': [uk_region],
             'mean_temperature_winter': [mean_temp_winter],
             'mean_wind_winter': [mean_wind_winter],
             'total_rainfall_winter': [total_rainfall_winter],
