@@ -85,8 +85,6 @@ if st.button("Predict Emissions"):
             'Year': [year],
             'Latitude': [latitude],
             'Longitude': [longitude],
-            'Sector': [sector],
-            'UK_Region': [uk_region],
             'mean_temperature_winter': [mean_temp_winter],
             'mean_wind_winter': [mean_wind_winter],
             'total_rainfall_winter': [total_rainfall_winter],
@@ -97,6 +95,16 @@ if st.button("Predict Emissions"):
             'mean_pressure_annual_X_mean_wind_annual': [pressure_wind_annual_interaction],
             'Facility_Count_25km': [facility_count]
         })
+        
+        # Create dummy variables for categorical features
+        sector_df = pd.DataFrame({'Sector': [sector]})
+        region_df = pd.DataFrame({'UK_Region': [uk_region]})
+        
+        sector_dummies = pd.get_dummies(sector_df, columns=['Sector'], prefix='Sector')
+        region_dummies = pd.get_dummies(region_df, columns=['UK_Region'], prefix='UK_Region')
+        
+        # Combine all features
+        input_data = pd.concat([input_data, sector_dummies, region_dummies], axis=1)
         
         # Make prediction
         prediction = model.predict(input_data)[0]
