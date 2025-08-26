@@ -13,10 +13,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# Define all possible categories
-SECTOR_CATEGORIES = ["Oil&Gas", "Power", "Waste", "Chemical"]
-REGION_CATEGORIES = ["North", "Midlands", "South", "Scotland", "Wales"]
-
 # Load the model
 @st.cache_resource
 def load_model():
@@ -26,45 +22,14 @@ def load_model():
             st.error("Model file not found. Please ensure 'xgb_strategic_optuna.pkl' is in the same directory as this app.")
             st.stop()
         
-        # Load model using joblib
-        try:
-            model = joblib.load(model_path)
-            return model
-        except Exception as e:
-            st.error(f"""
-            Failed to load the model: {str(e)}
-            This might be due to compatibility issues.
-            Please ensure the model was saved with compatible versions.
-            """)
-            st.stop()
+        return joblib.load(model_path)
             
     except Exception as e:
-        st.error(f"Error accessing model file: {str(e)}")
+        st.error(f"Error loading model: {str(e)}")
         st.stop()
 
-# Create categorical encoders
-def encode_categorical(df):
-    # Create dummy variables for all possible categories
-    for sector in SECTOR_CATEGORIES:
-        col_name = f"Sector_{sector}"
-        df[col_name] = (df['Sector'] == sector).astype(int)
-    
-    for region in REGION_CATEGORIES:
-        col_name = f"UK_Region_{region}"
-        df[col_name] = (df['UK_Region'] == region).astype(int)
-    
-    # Drop original categorical columns
-    df = df.drop(['Sector', 'UK_Region'], axis=1)
-    
-    return df
-
-# Try to load the model
-try:
-    with st.spinner('Loading model...'):
-        model = load_model()
-except Exception as e:
-    st.error("Failed to initialize the model. Please check the error messages above.")
-    st.stop()
+# Load model
+model = load_model()
 
 # Title and description
 st.title("Methane Emissions Predictor")
@@ -84,12 +49,12 @@ with col1:
     # Categorical inputs
     sector = st.selectbox(
         "Sector",
-        options=SECTOR_CATEGORIES
+        options=["Oil&Gas", "Power", "Waste", "Chemical"]
     )
     
     uk_region = st.selectbox(
         "UK Region",
-        options=REGION_CATEGORIES
+        options=["North", "Midlands", "South", "Scotland", "Wales"]
     )
     
     facility_count = st.number_input("Facility Count (25km radius)", min_value=0, max_value=100, value=1)
@@ -109,7 +74,8 @@ with col2:
 
 # Calculate interaction terms
 temp_rain_winter_interaction = mean_temp_winter * total_rainfall_winter
-pressure_wind_annual_interaction = mean_wind_annual * st.number_input("Mean Pressure Annual (hPa)", min_value=980.0, max_value=1030.0, value=1013.0)
+mean_pressure_annual = st.number_input("Mean Pressure Annual (hPa)", min_value=980.0, max_value=1030.0, value=1013.0)
+pressure_wind_annual_interaction = mean_wind_annual * mean_pressure_annual
 
 # Create prediction button
 if st.button("Predict Emissions"):
@@ -119,8 +85,6 @@ if st.button("Predict Emissions"):
             'Year': [year],
             'Latitude': [latitude],
             'Longitude': [longitude],
-            'Sector': [sector],
-            'UK_Region': [uk_region],
             'mean_temperature_winter': [mean_temp_winter],
             'mean_wind_winter': [mean_wind_winter],
             'total_rainfall_winter': [total_rainfall_winter],
@@ -132,11 +96,9 @@ if st.button("Predict Emissions"):
             'Facility_Count_25km': [facility_count]
         })
         
-        # Encode categorical variables
-        input_data = encode_categorical(input_data)
-        
-        # Debug: Print column names
-        st.write("Debug - Input columns:", input_data.columns.tolist())
+        # Add categorical columns
+        input_data[f'Sector_{sector}'] = 1
+        input_data[f'UK_Region_{uk_region}'] = 1
         
         # Make prediction
         prediction = model.predict(input_data)[0]
