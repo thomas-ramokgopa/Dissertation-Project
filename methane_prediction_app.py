@@ -85,6 +85,8 @@ if st.button("Predict Emissions"):
             'Year': [year],
             'Latitude': [latitude],
             'Longitude': [longitude],
+            'Sector': [sector],
+            'UK_Region': [uk_region],
             'mean_temperature_winter': [mean_temp_winter],
             'mean_wind_winter': [mean_wind_winter],
             'total_rainfall_winter': [total_rainfall_winter],
@@ -95,10 +97,6 @@ if st.button("Predict Emissions"):
             'mean_pressure_annual_X_mean_wind_annual': [pressure_wind_annual_interaction],
             'Facility_Count_25km': [facility_count]
         })
-        
-        # Add categorical columns
-        input_data[f'Sector_{sector}'] = 1
-        input_data[f'UK_Region_{uk_region}'] = 1
         
         # Make prediction
         prediction = model.predict(input_data)[0]
