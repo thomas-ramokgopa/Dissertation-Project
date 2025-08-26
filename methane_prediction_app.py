@@ -13,6 +13,10 @@ st.set_page_config(
     layout="wide"
 )
 
+# Define all possible categories
+SECTOR_CATEGORIES = ["Oil&Gas", "Power", "Waste", "Chemical"]
+REGION_CATEGORIES = ["North", "Midlands", "South", "Scotland", "Wales"]
+
 # Load the model
 @st.cache_resource
 def load_model():
@@ -40,13 +44,17 @@ def load_model():
 
 # Create categorical encoders
 def encode_categorical(df):
-    # Create one-hot encoding for Sector
-    sector_dummies = pd.get_dummies(df['Sector'], prefix='Sector')
-    df = pd.concat([df.drop('Sector', axis=1), sector_dummies], axis=1)
+    # Create dummy variables for all possible categories
+    for sector in SECTOR_CATEGORIES:
+        col_name = f"Sector_{sector}"
+        df[col_name] = (df['Sector'] == sector).astype(int)
     
-    # Create one-hot encoding for UK_Region
-    region_dummies = pd.get_dummies(df['UK_Region'], prefix='UK_Region')
-    df = pd.concat([df.drop('UK_Region', axis=1), region_dummies], axis=1)
+    for region in REGION_CATEGORIES:
+        col_name = f"UK_Region_{region}"
+        df[col_name] = (df['UK_Region'] == region).astype(int)
+    
+    # Drop original categorical columns
+    df = df.drop(['Sector', 'UK_Region'], axis=1)
     
     return df
 
@@ -76,12 +84,12 @@ with col1:
     # Categorical inputs
     sector = st.selectbox(
         "Sector",
-        options=["Oil&Gas", "Power", "Waste", "Chemical"]
+        options=SECTOR_CATEGORIES
     )
     
     uk_region = st.selectbox(
         "UK Region",
-        options=["North", "Midlands", "South", "Scotland", "Wales"]
+        options=REGION_CATEGORIES
     )
     
     facility_count = st.number_input("Facility Count (25km radius)", min_value=0, max_value=100, value=1)
@@ -126,6 +134,9 @@ if st.button("Predict Emissions"):
         
         # Encode categorical variables
         input_data = encode_categorical(input_data)
+        
+        # Debug: Print column names
+        st.write("Debug - Input columns:", input_data.columns.tolist())
         
         # Make prediction
         prediction = model.predict(input_data)[0]
